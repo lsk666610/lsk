@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python版爱心效果复刻</title>
+    <style>
+        /* 保持与Python版完全一致的样式尺寸 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "微软雅黑", sans-serif;
+        }
+        body {
+            background-color: #f5f5f5;
+            overflow: hidden;
+            height: 100vh;
+        }
+        .init-window {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 350px;
+            height: 180px;
+            background-color: #f0f8ff;
+            border-radius: 4px;
+            padding: 20px 15px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        .init-window h2 {
+            color: #333;
+            margin: 20px 0;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .btn-group {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 15px;
+        }
+        .btn {
+            padding: 8px 0;
+            width: 70px;
+            border: 1px solid #ccc;
+            border-radius: 2px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .btn-yes {
+            background-color: #d5f5e3;
+        }
+        .btn-no {
+            background-color: #fadbd8;
+        }
+        .tip-window {
+            position: fixed;
+            width: 200px;
+            height: 80px;
+            background-color: #fff0f0;
+            border-radius: 2px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            z-index: 1001;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .tip-window p {
+            color: #e74c3c;
+            font-size: 10px;
+        }
+        .popup {
+            position: fixed;
+            width: 240px;
+            height: 80px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 2px;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+        }
+        .popup p {
+            color: #333;
+            font-size: 13px;
+            font-weight: bold;
+            text-align: center;
+            width: 220px;
+        }
+    </style>
+</head>
+<body>
+    <div class="init-window" id="initWindow">
+        <h2>黄莹莹是大笨蛋吗？</h2>
+        <div class="btn-group">
+            <button class="btn btn-yes" id="yesBtn">是</button>
+            <button class="btn btn-no" id="noBtn">不是</button>
+        </div>
+    </div>
+
+    <script>
+        const TIPS = ["傻呗黄莹莹", "黄莹莹大笨蛋", "黄莹莹大傻瓜"];
+        const BGS = ["#FFE4E1", "#FFF0F5", "#FFE6E6", "#F0F8FF", "#E6E6FA", 
+                     "#E0FFFF", "#FFFACD", "#F5F5DC", "#F0FFF0", "#E8F5E9"];
+        const FIRST_POPUPS_NUM = 52; // 与Python一致的52个弹窗
+        const FINAL_POPUPS_NUM = 100;
+
+        // 完全复刻Python的爱心坐标生成逻辑（弹窗初始位置就是爱心形状）
+        function getHeartCoords(num) {
+            const coords = [];
+            const screenW = window.innerWidth;
+            const screenH = window.innerHeight;
+            // 与Python完全一致的缩放计算：min(屏幕宽高) // 28
+            const scale = Math.floor(Math.min(screenW, screenH) / 28);
+            const centerX = Math.floor(screenW / 2);
+            const centerY = Math.floor(screenH / 2);
+
+            // 逐点计算，与Python的循环逻辑完全一致
+            for (let i = 0; i < num; i++) {
+                const t = (i / num) * 2 * Math.PI; // 角度从0到2π均匀分布
+                // 复刻Python的三角函数公式（心形曲线）
+                const x = 16 * Math.pow(Math.sin(t), 3);
+                const y = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
+                // 坐标偏移与Python完全一致（240x80窗口的一半：120和40）
+                const winX = Math.floor(centerX + x * scale - 120);
+                const winY = Math.floor(centerY - y * scale - 40);
+                coords.push({x: winX, y: winY});
+            }
+            return coords;
+        }
+
+        // 初始窗口交互（与Python一致）
+        const initWindow = document.getElementById("initWindow");
+        const yesBtn = document.getElementById("yesBtn");
+        const noBtn = document.getElementById("noBtn");
+
+        noBtn.addEventListener("click", () => {
+            const tip = document.createElement("div");
+            tip.className = "tip-window";
+            tip.innerHTML = `<p>请点击「是」开始哦~</p>`;
+            document.body.appendChild(tip);
+            const initRect = initWindow.getBoundingClientRect();
+            // 复刻Python的提示窗位置：主窗口x+75，y+50
+            tip.style.left = `${initRect.left + 75}px`;
+            tip.style.top = `${initRect.top + 50}px`;
+            setTimeout(() => tip.remove(), 2000); // 2秒后消失，与Python一致
+        });
+
+        yesBtn.addEventListener("click", () => {
+            initWindow.remove();
+            mainFlow();
+        });
+
+        // 主流程：完全复刻Python的时序和逻辑
+        function mainFlow() {
+            const screenW = window.innerWidth;
+            const screenH = window.innerHeight;
+            // 聚合目标位置（与Python一致：屏幕中心 - 窗口一半尺寸）
+            const targetX = Math.floor(screenW / 2 - 120);
+            const targetY = Math.floor(screenH / 2 - 40);
+
+            // 1. 生成爱心坐标（弹窗初始位置就是爱心形状）
+            const heartCoords = getHeartCoords(FIRST_POPUPS_NUM);
+            const firstPopups = [];
+
+            // 2. 按顺序创建弹窗（与Python一样间隔0.06秒）
+            heartCoords.forEach((coord, index) => {
+                setTimeout(() => {
+                    const popup = createPopup(coord.x, coord.y);
+                    firstPopups.push({
+                        element: popup,
+                        x: coord.x,
+                        y: coord.y,
+                        targetX,
+                        targetY,
+                        ready: false // 是否开始聚合
+                    });
+                }, index * 60); // 60ms间隔，与Python的0.06秒一致
+            });
+
+            // 3. 所有弹窗创建完成后，停留1.5秒（与Python一致），再开始聚合
+            setTimeout(() => {
+                firstPopups.forEach(popup => {
+                    popup.ready = true;
+                    startGather(popup); // 开始聚合动画
+                });
+            }, 52 * 60 + 1500); // 52个弹窗创建时间（52*60ms） + 停留1.5秒
+
+            // 4. 聚合完成后，显示最终100个弹窗（与Python时序一致）
+            setTimeout(() => {
+                const finalCoords = [];
+                for (let i = 0; i < FINAL_POPUPS_NUM; i++) {
+                    // 复刻Python的随机坐标范围
+                    const x = Math.floor(Math.random() * (screenW - 320) + 80);
+                    const y = Math.floor(Math.random() * (screenH - 120) + 40);
+                    finalCoords.push({x, y});
+                }
+
+                // 按0.02秒间隔创建最终弹窗（与Python一致）
+                const finalPopups = [];
+                finalCoords.forEach((coord, index) => {
+                    setTimeout(() => {
+                        const popup = createPopup(coord.x, coord.y);
+                        finalPopups.push(popup);
+                        // 所有弹窗创建后，3秒后消失（与Python一致）
+                        if (index === FINAL_POPUPS_NUM - 1) {
+                            setTimeout(() => {
+                                finalPopups.forEach(p => p.remove());
+                            }, 3000);
+                        }
+                    }, index * 20); // 20ms间隔，与Python的0.02秒一致
+                });
+            }, 52*60 + 1500 + 2000); // 创建时间+停留时间+聚合动画时间（约2秒）
+        }
+
+        // 创建弹窗（样式与Python完全一致）
+        function createPopup(x, y) {
+            const popup = document.createElement("div");
+            popup.className = "popup";
+            popup.style.left = `${x}px`;
+            popup.style.top = `${y}px`;
+            popup.style.backgroundColor = BGS[Math.floor(Math.random() * BGS.length)];
+            popup.innerHTML = `<p>${TIPS[Math.floor(Math.random() * TIPS.length)]}</p>`;
+            document.body.appendChild(popup);
+            return popup;
+        }
+
+        // 聚合动画（完全复刻Python的移动逻辑）
+        function startGather(popup) {
+            if (!popup.ready) {
+                setTimeout(() => startGather(popup), 50);
+                return;
+            }
+
+            const dx = popup.targetX - popup.x;
+            const dy = popup.targetY - popup.y;
+
+            // 接近目标位置时，800ms后销毁（与Python一致）
+            if (Math.abs(dx) < 2 && Math.abs(dy) < 2) {
+                setTimeout(() => popup.element.remove(), 800);
+                return;
+            }
+
+            // 移动步长与Python一致：0.15倍差值
+            popup.x += dx * 0.15;
+            popup.y += dy * 0.15;
+            popup.element.style.left = `${Math.floor(popup.x)}px`;
+            popup.element.style.top = `${Math.floor(popup.y)}px`;
+
+            // 50ms更新一次位置（与Python的after(50)一致）
+            setTimeout(() => startGather(popup), 50);
+        }
+
+        // 禁止关闭初始窗口（与Python禁用右上角按钮一致）
+        history.pushState(null, null, location.href);
+        window.addEventListener('popstate', () => {
+            history.pushState(null, null, location.href);
+        });
+    </script>
+</body>
+</html>
